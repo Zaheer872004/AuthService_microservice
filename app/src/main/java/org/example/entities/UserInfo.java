@@ -21,6 +21,7 @@ public class UserInfo {
 //    @GeneratedValue(strategy = GenerationType.AUTO)
     private String userId;
 
+    @Column(nullable = false,unique = true)
     private String username;
 
 //    private String email;

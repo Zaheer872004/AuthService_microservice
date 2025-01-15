@@ -22,14 +22,21 @@ public class RefreshTokenService {
 
     // 10 minutes 1000*60*60*24*10
     // create refresh token
-    public RefreshToken createRefreshToken(String username){
+    public RefreshToken createRefreshToken(String username) {
         UserInfo userInfoExtracted = userRepository.findByUsername(username);
-        RefreshToken refreshToken = RefreshToken
-                .builder()
+
+        if (userInfoExtracted == null) {
+            throw new RuntimeException("User not found with username: " + username);
+        }
+
+        // Create a new refresh token
+        RefreshToken refreshToken = RefreshToken.builder()
                 .userInfo(userInfoExtracted)
                 .token(UUID.randomUUID().toString())
-                .expiryDate(Instant.now().plusMillis(1000*60*60*24*3)) // 3 days
+                .expiryDate(Instant.now().plusMillis(1000 * 60 * 2)) // 2 minutes
                 .build();
+
+        // Save and return the refresh token
         return refreshTokenRepository.save(refreshToken);
     }
 

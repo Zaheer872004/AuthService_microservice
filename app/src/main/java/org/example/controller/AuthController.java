@@ -80,39 +80,6 @@ public class AuthController
         }
     }
 
-//    @GetMapping("auth/v1/userDetails")
-//    public ResponseEntity<?> getUserDetails(Principal principal) {
-//        try {
-//            // Ensure the user is authenticated
-//            if (principal == null) {
-//                return new ResponseEntity<>("Unauthorized access", HttpStatus.UNAUTHORIZED);
-//            }
-//
-//            // Extract username or other details from Principal
-//            String username = principal.getName();
-//
-//            // Fetch user details based on the username
-//            UserInfo user = userRepository.findByUsername(username);
-//
-//            if(user == null){
-//                return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
-//            }
-//
-//            // Prepare a response DTO with user details
-//            UserDetailRespone userResponse = UserDetailRespone.builder()
-//                    .username(user.getUsername())
-//                    .password(user.getPassword())
-//                    .roles(user.getRoles())
-//                    .build();
-//
-//            return new ResponseEntity<>(userResponse, HttpStatus.OK);
-//
-//        } catch (Exception e) {
-//            // Handle unexpected errors
-//            return new ResponseEntity<>("Exception in User Service: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-//        }
-//    }
-
 
 
 

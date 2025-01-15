@@ -33,6 +33,8 @@ public class SecurityConfig {
     @Autowired
     private final UserDetailsServiceImpl userDetailsServiceImpl;
 
+    @Autowired
+    private final JwtAuthFilter jwtAuthFilter;
 
     @Bean
     @Autowired
@@ -41,22 +43,23 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter) throws Exception {
-        http.csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.disable())
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        return http
+                .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/v1/login", "/auth/v1/refreshToken", "/auth/v1/signup").permitAll()
+                        .requestMatchers(
+                                "/auth/v1/login",
+                                "/auth/v1/signup",
+                                "/auth/v1/refreshToken"  // Make sure path is exact
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
-                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .httpBasic(Customizer.withDefaults())
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore((request, response, chain) -> {
-//                    System.out.println("Request headers: " + request.getHeaderNames());
-                    chain.doFilter(request, response);
-                }, JwtAuthFilter.class); // Debug filter to log request headers
-        return http.build();
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .build();
     }
 
     @Bean
