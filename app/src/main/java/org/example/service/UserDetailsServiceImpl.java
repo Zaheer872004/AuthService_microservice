@@ -2,11 +2,12 @@ package org.example.service;
 
 
 import org.example.entities.UserInfo;
+import org.example.model.UserInfoEvent;
+import org.example.eventProducer.UserInfoProducer;
 import org.example.model.UserInfoDto;
 import org.example.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,9 @@ public class UserDetailsServiceImpl implements UserDetailsService
     @Autowired
     private final PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private final UserInfoProducer userInfoProducer;
+
 
     private static final Logger log = LoggerFactory.getLogger(UserDetailsServiceImpl.class);
 
@@ -54,29 +58,36 @@ public class UserDetailsServiceImpl implements UserDetailsService
         return userRepository.findByUsername(userInfoDto.getUsername());
     }
 
-    public Boolean signupUser(UserInfoDto userInfoDto) {
-        try {
-            userInfoDto.setPassword(passwordEncoder.encode(userInfoDto.getPassword()));
-            log.info("Password encoded successfully.");
+    public Boolean signupUser(UserInfoDto userInfoDto){
+        //        ValidationUtil.validateUserAttributes(userInfoDto);
 
-            if (Objects.nonNull(checkIfUserAlreadyExist(userInfoDto))) {
-                log.info("User already exists: {}", userInfoDto.getUsername());
-                return false;
-            }
-
-            String userId = UUID.randomUUID().toString();
-            log.info("Generated userId: {}", userId);
-
-            UserInfo user = new UserInfo(userId, userInfoDto.getUsername(), userInfoDto.getPassword(), new HashSet<>());
-            log.info("User object created: {}", user);
-
-            userRepository.save(user);
-            log.info("User saved successfully.");
-            return true;
-        } catch (Exception ex) {
-            log.error("Error during signup: {}", ex.getMessage(), ex);
-            throw new RuntimeException("Failed to sign up user.", ex);
+        userInfoDto.setPassword(passwordEncoder.encode(userInfoDto.getPassword()));
+        if(Objects.nonNull(checkIfUserAlreadyExist(userInfoDto))){
+            return false;
         }
+        String userId = UUID.randomUUID().toString();
+
+        userInfoDto.setUserId(userId); // Set userId in DTO
+
+        UserInfo userInfo = new UserInfo(userId, userInfoDto.getUsername(), userInfoDto.getPassword(), new HashSet<>());
+        userRepository.save(userInfo);
+        System.out.println("User saved successfully..!!"+userInfo);
+        System.out.println("User saved successfully..!!"+userInfoDto+"------------------------->"+userInfoDto.getUserId());
+        // pushEventToQueue
+        userInfoProducer.sendEventToKafka(userInfoEventToPublished(userInfoDto));
+
+        System.out.println("done with sending the event to kafka");
+        return true;
+    }
+
+    private UserInfoEvent userInfoEventToPublished(UserInfoDto userInfoDto){
+        return UserInfoEvent.builder()
+                .userId(userInfoDto.getUserId())
+                .firstName(userInfoDto.getFirstName())
+                .lasName(userInfoDto.getLastName())
+                .email(userInfoDto.getEmail())
+                .phoneNumber(userInfoDto.getPhoneNumber())
+                .build();
     }
 
 }
