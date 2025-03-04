@@ -75,32 +75,36 @@ public class TokenController
     }
 
     @PostMapping("auth/v1/refreshToken")
-    public ResponseEntity<?> refreshToken(@RequestBody RefreshTokenRequestDTO refreshTokenRequestDTO) {
+    public JwtResponseDTO refreshToken(@RequestBody RefreshTokenRequestDTO refreshTokenRequestDTO){
+        return refreshTokenService.findByToken(refreshTokenRequestDTO.getToken())
+                .map(refreshTokenService::verifyExpiration)
+                .map(RefreshToken::getUserInfo)
+                .map(userInfo -> {
+                    String accessToken = jwtService.GenerateToken(userInfo.getUsername());
+                    return JwtResponseDTO.builder()
+                            .accessToken(accessToken)
+                            .token(refreshTokenRequestDTO.getToken()).build();
+                }).orElseThrow(() ->new RuntimeException("Refresh Token is not in DB..!!"));
+    }
+
+
+    @PostMapping("auth/v1/logout")
+    public ResponseEntity<?> logout(@RequestBody String refreshToken) {
         try {
-            if (refreshTokenRequestDTO.getToken() == null) {
-                return ResponseEntity.badRequest()
-                        .body("Refresh token is required");
+            if (refreshToken == null || refreshToken.isEmpty()) {
+                return new ResponseEntity<>("Refresh token is required", HttpStatus.BAD_REQUEST);
             }
 
-            RefreshToken refreshToken = refreshTokenService.findByToken(refreshTokenRequestDTO.getToken())
-                    .orElseThrow(() -> new RuntimeException("Refresh token not found"));
+            // Find the refresh token from the database and delete it
+            refreshTokenService.deleteByToken(refreshToken);
 
-            // Verify token expiration
-            refreshToken = refreshTokenService.verifyExpiration(refreshToken);
-
-            // Generate new access token
-            String newAccessToken = jwtService.GenerateToken(refreshToken.getUserInfo().getUsername());
-
-            return ResponseEntity.ok(JwtResponseDTO.builder()
-                    .accessToken(newAccessToken)
-                    .token(refreshToken.getToken())
-                    .username(refreshToken.getUserInfo().getUsername())
-                    .build());
-
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(e.getMessage());
+            // Return a successful response
+            return ResponseEntity.ok("Successfully logged out");
+        } catch (Exception ex) {
+            return new ResponseEntity<>("Error during logout", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+
 
 }

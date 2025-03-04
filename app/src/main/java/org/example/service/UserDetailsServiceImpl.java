@@ -58,13 +58,22 @@ public class UserDetailsServiceImpl implements UserDetailsService
         return userRepository.findByUsername(userInfoDto.getUsername());
     }
 
+    public String getUserByUsername(String userName) {
+        UserInfo user = userRepository.findByUsername(userName);
+        System.out.println(user);
+        return (user != null) ? user.getUserId() : null;
+    }
+
+
     public Boolean signupUser(UserInfoDto userInfoDto){
         //        ValidationUtil.validateUserAttributes(userInfoDto);
 
-        userInfoDto.setPassword(passwordEncoder.encode(userInfoDto.getPassword()));
+        userInfoDto.setPassword(passwordEncoder.encode(userInfoDto.getPassword())); // hashing the password here
+
         if(Objects.nonNull(checkIfUserAlreadyExist(userInfoDto))){
             return false;
         }
+
         String userId = UUID.randomUUID().toString();
 
         userInfoDto.setUserId(userId); // Set userId in DTO
