@@ -58,7 +58,7 @@ public class AuthController
             RefreshToken refreshToken = refreshTokenService.createRefreshToken(userInfoDto.getUsername());
             System.out.println("Okay 3");
 
-            String jwtToken = jwtService.GenerateToken(userInfoDto.getUsername());
+            String jwtToken = jwtService.generateToken(userInfoDto.getUsername());
             System.out.println("Okay 4");
 
 //            return new ResponseEntity<>(JwtResponseDTO

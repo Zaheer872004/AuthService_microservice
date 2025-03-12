@@ -19,8 +19,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Optional;
 
-@Controller
+
+@RestController
 public class TokenController
 {
 
@@ -37,7 +39,7 @@ public class TokenController
     private JwtService jwtService;
 
     @PostMapping("auth/v1/login")
-    public ResponseEntity AuthenticateAndGetToken(@RequestBody AuthRequestDTO authRequestDTO){
+    public ResponseEntity<JwtResponseDTO> AuthenticateAndGetToken(@RequestBody AuthRequestDTO authRequestDTO){
 
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authRequestDTO.getUsername(), authRequestDTO.getPassword()));
 
@@ -51,7 +53,7 @@ public class TokenController
             RefreshToken refreshToken = refreshTokenService.createRefreshToken(authRequestDTO.getUsername());
 
             // here also have to create the access token
-            String accessToken = jwtService.GenerateToken(authRequestDTO.getUsername());
+            String accessToken = jwtService.generateToken(authRequestDTO.getUsername());
 
             // Also need to save the refreshToken in the db
             refreshTokenRepository.save(refreshToken);
@@ -70,40 +72,47 @@ public class TokenController
                     .build(), HttpStatus.OK);
 
         } else {
-            return new ResponseEntity<>("Exception in User Service", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>(JwtResponseDTO.builder().build(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @PostMapping("auth/v1/refreshToken")
-    public JwtResponseDTO refreshToken(@RequestBody RefreshTokenRequestDTO refreshTokenRequestDTO){
+    public ResponseEntity<JwtResponseDTO> refreshToken(@RequestBody RefreshTokenRequestDTO refreshTokenRequestDTO) {
         return refreshTokenService.findByToken(refreshTokenRequestDTO.getToken())
                 .map(refreshTokenService::verifyExpiration)
                 .map(RefreshToken::getUserInfo)
-                .map(userInfo -> {
-                    String accessToken = jwtService.GenerateToken(userInfo.getUsername());
-                    return JwtResponseDTO.builder()
-                            .accessToken(accessToken)
-                            .token(refreshTokenRequestDTO.getToken()).build();
-                }).orElseThrow(() ->new RuntimeException("Refresh Token is not in DB..!!"));
+                .map(userInfo -> JwtResponseDTO.builder()
+                        .accessToken(jwtService.generateToken(userInfo.getUsername()))
+                        .token(refreshTokenRequestDTO.getToken())
+                        .build()
+                ).map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(JwtResponseDTO.builder()
+                                .accessToken("")
+                                .token("")
+                                .build()));
     }
 
 
+
+
+
     @PostMapping("auth/v1/logout")
-    public ResponseEntity<?> logout(@RequestBody String refreshToken) {
+    public ResponseEntity<?> logout(@RequestBody RefreshTokenRequestDTO refreshTokenRequestDTO) {
         try {
-            if (refreshToken == null || refreshToken.isEmpty()) {
+            if (refreshTokenRequestDTO.getToken() == null || refreshTokenRequestDTO.getToken().isEmpty()) {
                 return new ResponseEntity<>("Refresh token is required", HttpStatus.BAD_REQUEST);
             }
 
-            // Find the refresh token from the database and delete it
-            refreshTokenService.deleteByToken(refreshToken);
+            // Delete the refresh token
+            refreshTokenService.deleteByToken(refreshTokenRequestDTO.getToken());
 
-            // Return a successful response
             return ResponseEntity.ok("Successfully logged out");
         } catch (Exception ex) {
             return new ResponseEntity<>("Error during logout", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 
 
 

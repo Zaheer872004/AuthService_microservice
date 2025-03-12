@@ -25,7 +25,7 @@ public class RefreshTokenService {
         RefreshToken refreshToken = RefreshToken.builder()
                 .userInfo(userInfoExtracted)
                 .token(UUID.randomUUID().toString())
-                .expiryDate(Instant.now().plusMillis(600000)) // 10 minutes
+                .expiryDate(Instant.now().plusSeconds(7 * 24 * 60 * 60)) // 7 days
                 .build();
         return refreshTokenRepository.save(refreshToken);
     }
@@ -33,6 +33,16 @@ public class RefreshTokenService {
     public Optional<RefreshToken> findByToken(String token){
         return refreshTokenRepository.findByToken(token);
     }
+//    public Optional<RefreshToken> findByToken(String token) {
+//        Optional<RefreshToken> refreshToken = refreshTokenRepository.findByToken(token);
+//
+//        if (refreshToken.isEmpty()) {
+//            throw new RuntimeException("Refresh token not found: " + token);
+//        }
+//
+//        return refreshToken;
+//    }
+
 
     public RefreshToken verifyExpiration(RefreshToken token){
         if(token.getExpiryDate().compareTo(Instant.now())<0){
