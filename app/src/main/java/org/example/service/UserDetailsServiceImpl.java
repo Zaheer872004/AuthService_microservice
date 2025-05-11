@@ -45,7 +45,7 @@ public class UserDetailsServiceImpl implements UserDetailsService
     {
 
         log.debug("Entering in loadUserByUsername Method...");
-        UserInfo user = userRepository.findByUsername(username);
+        UserInfo user = userRepository.findByUsername(username); // if we want to use the email then set findByUsername(email) and also in db as well
         if(user == null){
             log.error("Username not found: " + username);
             throw new UsernameNotFoundException("could not found user..!!");
@@ -68,7 +68,7 @@ public class UserDetailsServiceImpl implements UserDetailsService
     public Boolean signupUser(UserInfoDto userInfoDto){
         //        ValidationUtil.validateUserAttributes(userInfoDto);
 
-        userInfoDto.setPassword(passwordEncoder.encode(userInfoDto.getPassword())); // hashing the password here
+        userInfoDto.setPassword(passwordEncoder.encode(userInfoDto.getPassword())); // setting and hashing the password here
 
         if(Objects.nonNull(checkIfUserAlreadyExist(userInfoDto))){
             return false;

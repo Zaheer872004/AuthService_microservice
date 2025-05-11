@@ -14,7 +14,7 @@ public class CustomUserDetails extends UserInfo
         implements UserDetails
 {
 
-    private String username;
+    private String username; // username or email, but here only username
 
     private String password;
 
@@ -23,8 +23,9 @@ public class CustomUserDetails extends UserInfo
     public CustomUserDetails(UserInfo byUsername) {
         this.username = byUsername.getUsername();
         this.password= byUsername.getPassword();
-        List<GrantedAuthority> auths = new ArrayList<>();
 
+        // this.authorities = byUsername.getRoles(); // this is not correct, because users have many roles
+        List<GrantedAuthority> auths = new ArrayList<>();
         for(UserRole role : byUsername.getRoles()){
             auths.add(new SimpleGrantedAuthority(role.getName().toUpperCase()));
             // admin -> ADMIN

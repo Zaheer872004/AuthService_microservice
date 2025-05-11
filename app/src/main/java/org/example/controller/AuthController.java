@@ -2,6 +2,7 @@ package org.example.controller;
 
 
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.example.entities.RefreshToken;
 import org.example.entities.UserInfo;
 import org.example.model.UserInfoDto;
@@ -34,7 +35,7 @@ public class AuthController
 {
 
     @Autowired
-    private JwtService jwtService;
+    private JwtService jwtService;  // Access Token services
 
     @Autowired
     private RefreshTokenService refreshTokenService;
@@ -48,7 +49,7 @@ public class AuthController
     @PostMapping("auth/v1/signup")
     public ResponseEntity SignUp(@RequestBody UserInfoDto userInfoDto){
         try{
-            Boolean isSignUped = userDetailsService.signupUser(userInfoDto); // problem is here
+            Boolean isSignUped = userDetailsService.signupUser(userInfoDto); //
             System.out.println("Okay 1");
             if(Boolean.FALSE.equals(isSignUped)){
                 return new ResponseEntity<>("Already Exist", HttpStatus.BAD_REQUEST);
@@ -84,7 +85,9 @@ public class AuthController
 
     @GetMapping("/auth/v1/ping")
     public ResponseEntity<String> ping() {
+//        Boolean auth = SecurityContextHolder.getContext().getAuthentication().isAuthenticated();
 //        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()) {
             String userId = userDetailsService.getUserByUsername(authentication.getName());
